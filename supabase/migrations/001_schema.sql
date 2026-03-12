@@ -20,9 +20,9 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 -- ============================================================
 CREATE TABLE IF NOT EXISTS public.analysis_history (
   id           UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
-  -- user_id references auth.users directly so the service_role backend insert always works,
-  -- even if a profiles row hasn't been created yet (e.g. first login race condition).
-  user_id      UUID        REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  -- user_id references public.users_custom for our Custom JWT sessions
+  -- so the service_role backend insert works correctly mapped to custom users.
+  user_id      UUID        REFERENCES public.users_custom(id) ON DELETE CASCADE NOT NULL,
   content      TEXT        NOT NULL,                  -- the analyzed text (was wrongly named input_text)
   input_hash   TEXT        NOT NULL DEFAULT '',       -- sha256 of content, used for cache dedup
   verdict      TEXT        NOT NULL DEFAULT 'UNVERIFIED'
@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS public.analysis_history (
 -- ============================================================
 CREATE TABLE IF NOT EXISTS public.admin_logs (
   id          UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
-  admin_id    UUID        REFERENCES public.profiles(id) ON DELETE SET NULL,
+  admin_id    UUID        REFERENCES public.users_custom(id) ON DELETE SET NULL,
   action      TEXT        NOT NULL CHECK (action IN ('delete', 'flag', 'unflag', 'role_change')),
   target_type TEXT        NOT NULL CHECK (target_type IN ('analysis', 'user')),
   target_id   TEXT        NOT NULL,
